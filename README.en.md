@@ -1,36 +1,58 @@
-# bilibili
+# Personal Blog (Nuxt + Cloudflare)
 
-#### Description
-{**When you're done, you can delete the content in this README and update the file with details for others getting started with your repository**}
+This repository is a personal blog starter with:
 
-#### Software Architecture
-Software architecture description
+- Public site on Cloudflare Pages (stable, low-cost static hosting)
+- Private preview/ops endpoints via Cloudflare Tunnel
+- Cloudflare Zero Trust for `preview.*` and `ops.*`
 
-#### Installation
+Design rule: `Tunnel downtime must not break the public website`.
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+## Stack
 
-#### Instructions
+- Nuxt 3 (SSG)
+- Nuxt Content
+- Decap CMS (`/admin`)
+- giscus comments
+- Cloudflare Pages + Tunnel + Zero Trust
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+## Implemented Features
 
-#### Contribution
+- Post list / post detail / tags / search
+- Draft visibility toggle (`NUXT_PUBLIC_SHOW_DRAFTS`)
+- `rss.xml`, `sitemap.xml`, `search-index.json`, `robots.txt`
+- CMS admin panel at `/admin`
+- Health endpoint at `/api/healthz`
 
-1.  Fork the repository
-2.  Create Feat_xxx branch
-3.  Commit your code
-4.  Create Pull Request
+## Local Setup
 
+```bash
+npm install
+cp .env.example .env
+npm run dev
+```
 
-#### Gitee Feature
+## Draft Preview Mode
 
-1.  You can use Readme\_XXX.md to support different languages, such as Readme\_en.md, Readme\_zh.md
-2.  Gitee blog [blog.gitee.com](https://blog.gitee.com)
-3.  Explore open source project [https://gitee.com/explore](https://gitee.com/explore)
-4.  The most valuable open source project [GVP](https://gitee.com/gvp)
-5.  The manual of Gitee [https://gitee.com/help](https://gitee.com/help)
-6.  The most popular members  [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
+```bash
+./scripts/preview-dev.sh
+```
+
+Runs on `127.0.0.1:8787`.
+
+## Tunnel
+
+```bash
+cp ops/cloudflare/tunnel/config.example.yml ops/cloudflare/tunnel/config.yml
+./scripts/tunnel-run.sh
+```
+
+## Important Files
+
+- `.env.example`
+  - Public interface vars: `SITE_URL`, `PREVIEW_URL`, `GISCUS_*`, `CF_ACCESS_AUD`
+- `content.config.ts`
+- `public/admin/config.yml`
+- `ops/cloudflare/tunnel/config.example.yml`
+- `ops/cloudflare/tunnel/access-policies.md`
+- `docs/cloudflare-pages-tunnel.md`

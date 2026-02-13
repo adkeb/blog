@@ -1,39 +1,77 @@
-# bilibili
+# Personal Blog (Nuxt + Cloudflare)
 
-#### 介绍
-{**以下是 Gitee 平台说明，您可以替换此简介**
-Gitee 是 OSCHINA 推出的基于 Git 的代码托管平台（同时支持 SVN）。专为开发者提供稳定、高效、安全的云端软件开发协作平台
-无论是个人、团队、或是企业，都能够用 Gitee 实现代码托管、项目管理、协作开发。企业项目请看 [https://gitee.com/enterprises](https://gitee.com/enterprises)}
+个人博客模板，目标是：
 
-#### 软件架构
-软件架构说明
+- 公开主站低成本稳定运行（Cloudflare Pages）
+- 草稿预览和运维入口走私有通道（Cloudflare Tunnel）
+- 内容用 Markdown + 可视化 CMS（Decap CMS）
 
+## 架构
 
-#### 安装教程
+- `www.<domain>` -> Cloudflare Pages（公开）
+- `<domain>` -> 301 到 `www.<domain>`
+- `preview.<domain>` -> Cloudflare Tunnel（Zero Trust 保护）
+- `ops.<domain>` -> Cloudflare Tunnel（可选，Zero Trust 保护）
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+核心原则：`Tunnel 离线不影响公开主站`。
 
-#### 使用说明
+## 技术栈
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+- Nuxt 3（静态生成）
+- Nuxt Content（内容模型与渲染）
+- Decap CMS（`/admin` 可视化编辑）
+- giscus（评论）
+- Cloudflare Pages + Cloudflare Tunnel + Zero Trust
 
-#### 参与贡献
+## 已实现能力
 
-1.  Fork 本仓库
-2.  新建 Feat_xxx 分支
-3.  提交代码
-4.  新建 Pull Request
+- 文章列表、详情页、标签页、搜索页
+- 草稿可见性开关（`NUXT_PUBLIC_SHOW_DRAFTS`）
+- RSS：`/rss.xml`
+- Sitemap：`/sitemap.xml`
+- Search Index：`/search-index.json`
+- Robots：`/robots.txt`
+- CMS 后台：`/admin`
+- 健康检查：`/api/healthz`
 
+## 快速开始
 
-#### 特技
+```bash
+npm install
+cp .env.example .env
+npm run dev
+```
 
-1.  使用 Readme\_XXX.md 来支持不同的语言，例如 Readme\_en.md, Readme\_zh.md
-2.  Gitee 官方博客 [blog.gitee.com](https://blog.gitee.com)
-3.  你可以 [https://gitee.com/explore](https://gitee.com/explore) 这个地址来了解 Gitee 上的优秀开源项目
-4.  [GVP](https://gitee.com/gvp) 全称是 Gitee 最有价值开源项目，是综合评定出的优秀开源项目
-5.  Gitee 官方提供的使用手册 [https://gitee.com/help](https://gitee.com/help)
-6.  Gitee 封面人物是一档用来展示 Gitee 会员风采的栏目 [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
+打开 `http://localhost:3000`。
+
+## 预览模式（草稿可见）
+
+```bash
+./scripts/preview-dev.sh
+```
+
+默认启动在 `127.0.0.1:8787`。
+
+## Tunnel 启动
+
+```bash
+cp ops/cloudflare/tunnel/config.example.yml ops/cloudflare/tunnel/config.yml
+./scripts/tunnel-run.sh
+```
+
+## 关键配置
+
+- 环境变量模板：`.env.example`
+  - 公开接口变量：`SITE_URL`、`PREVIEW_URL`、`GISCUS_*`、`CF_ACCESS_AUD`
+- 内容模型：`content.config.ts`
+- CMS 配置：`public/admin/config.yml`
+- Tunnel 配置模板：`ops/cloudflare/tunnel/config.example.yml`
+- Zero Trust 策略模板：`ops/cloudflare/tunnel/access-policies.md`
+- 部署文档：`docs/cloudflare-pages-tunnel.md`
+
+## 验收要点
+
+1. 关闭本地 Tunnel 后，公开站依然可访问。
+2. 未授权访问 `preview.*` / `ops.*` 会被 Access 拦截。
+3. 草稿文章只在预览模式可见。
+4. RSS / Sitemap / Search Index 可正常访问。

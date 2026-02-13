@@ -1,0 +1,83 @@
+:root {
+  --bg: #f8fafc;
+  --bg-elevated: #ffffff;
+  --text: #0f172a;
+  --text-muted: #475569;
+  --line: #cbd5e1;
+  --brand: #0f766e;
+  --brand-strong: #134e4a;
+  --tag-bg: #e2e8f0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#__nuxt {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background: radial-gradient(1200px circle at 0 0, #dff8f5 0%, var(--bg) 55%);
+  color: var(--text);
+  font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  line-height: 1.65;
+}
+
+a {
+  color: var(--brand);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+.container {
+  margin: 0 auto;
+  max-width: 880px;
+  padding: 0 1rem;
+}
+
+.surface {
+  background: var(--bg-elevated);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+}
+
+.meta {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.tag {
+  background: var(--tag-bg);
+  border-radius: 999px;
+  color: var(--brand-strong);
+  display: inline-block;
+  font-size: 0.85rem;
+  margin-right: 0.5rem;
+  padding: 0.2rem 0.6rem;
+}
+
+.prose img {
+  border-radius: 12px;
+  max-width: 100%;
+}
+
+.prose pre {
+  background: #0f172a;
+  border-radius: 10px;
+  color: #e2e8f0;
+  overflow-x: auto;
+  padding: 1rem;
+}
+
+.prose code {
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+}
+
