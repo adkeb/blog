@@ -75,3 +75,4 @@ cp ops/cloudflare/tunnel/config.example.yml ops/cloudflare/tunnel/config.yml
 2. 未授权访问 `preview.*` / `ops.*` 会被 Access 拦截。
 3. 草稿文章只在预览模式可见。
 4. RSS / Sitemap / Search Index 可正常访问。
+# preview check
