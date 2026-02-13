@@ -84,10 +84,16 @@ async function handleAuth(url, env) {
   const rawState = url.searchParams.get("state");
   const origin = url.searchParams.get("origin");
   const host = url.searchParams.get("host");
+  const siteId = url.searchParams.get("site_id");
 
   const decodedState = parseRawState(rawState);
   const cmsOrigin =
-    origin || decodedState?.origin || (host ? `https://${host}` : env.CMS_ORIGIN || "");
+    origin ||
+    decodedState?.origin ||
+    (host ? `https://${host}` : "") ||
+    (siteId ? `https://${siteId}` : "") ||
+    env.CMS_ORIGIN ||
+    "";
 
   if (!cmsOrigin) {
     return json({ error: "missing origin" }, 400);
@@ -170,4 +176,3 @@ async function handleCallback(url, env) {
 
   return html(script, 200);
 }
-
