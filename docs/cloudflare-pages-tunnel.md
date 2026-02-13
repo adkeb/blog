@@ -18,7 +18,7 @@ cp .env.example .env
 
 1. 在 Cloudflare Pages 连接 GitHub 仓库。
 2. Build command: `npm run generate`
-3. Build output directory: `.output/public`
+3. Build output directory: `dist`
 4. 添加环境变量：
    - `SITE_URL`
    - `NUXT_PUBLIC_SHOW_DRAFTS=false`
@@ -31,8 +31,9 @@ cp .env.example .env
 
 1. 修改 `public/admin/config.yml` 的 `backend.repo`。
 2. 若使用 GitHub OAuth：
+   - 参考 `docs/decap-github-oauth-cloudflare-worker.md`
    - 配置 GitHub OAuth App 回调地址
-   - 在 Cloudflare Pages 或你自己的回调服务中配置相关密钥
+   - 部署 Cloudflare Worker OAuth 中转服务
 3. 发布后访问：`https://www.<domain>/admin`
 
 ## 4. Tunnel（私有预览/运维）

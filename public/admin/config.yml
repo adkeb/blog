@@ -2,6 +2,8 @@ backend:
   name: github
   repo: adkeb/blog
   branch: main
+  base_url: https://decap-github-oauth.xuyang020128.workers.dev
+  auth_endpoint: auth
 
 site_url: https://www.xuyangfly.site
 display_url: https://www.xuyangfly.site

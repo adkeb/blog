@@ -1,0 +1,23 @@
+name = "decap-github-oauth"
+main = "worker.js"
+compatibility_date = "2024-11-01"
+
+[observability]
+enabled = true
+
+[vars]
+# Set this to your CMS origin, e.g. https://www.xuyangfly.site
+CMS_ORIGIN = "https://www.example.com"
+
+# Must be exactly your worker callback endpoint.
+GITHUB_REDIRECT_URI = "https://decap-oauth.example.workers.dev/callback"
+
+# Random long string used to sign OAuth state.
+OAUTH_STATE_SECRET = "replace-with-32-char-random-string"
+
+# GitHub OAuth app client ID.
+GITHUB_CLIENT_ID = "replace-with-github-client-id"
+
+# GITHUB_CLIENT_SECRET should be set as a secret:
+# wrangler secret put GITHUB_CLIENT_SECRET
+

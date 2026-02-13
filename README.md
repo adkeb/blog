@@ -65,6 +65,7 @@ cp ops/cloudflare/tunnel/config.example.yml ops/cloudflare/tunnel/config.yml
   - 公开接口变量：`SITE_URL`、`PREVIEW_URL`、`GISCUS_*`、`CF_ACCESS_AUD`
 - 内容模型：`content.config.ts`
 - CMS 配置：`public/admin/config.yml`
+- CMS OAuth 部署：`docs/decap-github-oauth-cloudflare-worker.md`
 - Tunnel 配置模板：`ops/cloudflare/tunnel/config.example.yml`
 - Zero Trust 策略模板：`ops/cloudflare/tunnel/access-policies.md`
 - 部署文档：`docs/cloudflare-pages-tunnel.md`

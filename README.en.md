@@ -53,6 +53,7 @@ cp ops/cloudflare/tunnel/config.example.yml ops/cloudflare/tunnel/config.yml
   - Public interface vars: `SITE_URL`, `PREVIEW_URL`, `GISCUS_*`, `CF_ACCESS_AUD`
 - `content.config.ts`
 - `public/admin/config.yml`
+- `docs/decap-github-oauth-cloudflare-worker.md`
 - `ops/cloudflare/tunnel/config.example.yml`
 - `ops/cloudflare/tunnel/access-policies.md`
 - `docs/cloudflare-pages-tunnel.md`
