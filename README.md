@@ -26,6 +26,7 @@
 ## 已实现能力
 
 - 文章列表、详情页、标签页、搜索页
+- 章节体系：`/chapters`、章节详情、章节子文章详情
 - 草稿可见性开关（`NUXT_PUBLIC_SHOW_DRAFTS`）
 - RSS：`/rss.xml`
 - Sitemap：`/sitemap.xml`
@@ -76,3 +77,58 @@ cp ops/cloudflare/tunnel/config.example.yml ops/cloudflare/tunnel/config.yml
 2. 未授权访问 `preview.*` / `ops.*` 会被 Access 拦截。
 3. 草稿文章只在预览模式可见。
 4. RSS / Sitemap / Search Index 可正常访问。
+
+## 章节化写作
+
+### 目录结构
+
+```text
+content/
+  chapters/
+    machine-learning.md
+  chapter-posts/
+    machine-learning/
+      linear-regression.md
+      gradient-descent.md
+```
+
+### 章节 Frontmatter 示例
+
+```yaml
+---
+title: "机器学习"
+slug: "machine-learning"
+description: "机器学习章节索引"
+date: "2026-02-14"
+tags: ["机器学习"]
+category: "Chapter"
+draft: false
+---
+```
+
+章节正文可插入目录占位符：
+
+```md
+::chapter-children
+::
+```
+
+### 章节子文章 Frontmatter 示例
+
+```yaml
+---
+title: "线性回归入门"
+slug: "linear-regression"
+chapterSlug: "machine-learning"
+order: 1
+legacySlugs: ["ml-linear-regression"]
+description: "..."
+date: "2026-02-14"
+draft: false
+---
+```
+
+约束：
+
+- 文件路径必须与 `chapterSlug` 一致（字段 + 目录双重校验）。
+- 访问旧链接 `/posts/:legacySlug` 会 301 到 `/chapters/:chapterSlug/:slug`。

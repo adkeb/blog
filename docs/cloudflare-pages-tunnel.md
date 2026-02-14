@@ -35,6 +35,17 @@ cp .env.example .env
    - 配置 GitHub OAuth App 回调地址
    - 部署 Cloudflare Worker OAuth 中转服务
 3. 发布后访问：`https://www.<domain>/admin`
+4. 若启用章节化内容，新增两个 collection：
+   - `chapters`
+   - `chapter_posts`
+5. 章节正文可插入目录占位符：
+
+```md
+::chapter-children
+::
+```
+
+6. 子文章需放在目录 `content/chapter-posts/<chapterSlug>/` 下，并填写同名 `chapterSlug` 字段。
 
 ## 4. Tunnel（私有预览/运维）
 
@@ -84,3 +95,4 @@ cp ops/cloudflare/tunnel/config.example.yml ops/cloudflare/tunnel/config.yml
 3. 设置 `NUXT_PUBLIC_SHOW_DRAFTS=true` 时草稿可见；`false` 时草稿不可见。
 4. `https://www.<domain>/rss.xml`、`/sitemap.xml`、`/search-index.json` 可访问。
 5. 文章页 giscus 评论可加载。
+6. 章节页 `https://www.<domain>/chapters` 可访问，且章节子文章支持旧 `/posts/:slug` 301 跳转。

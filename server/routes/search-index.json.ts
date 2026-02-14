@@ -1,15 +1,19 @@
-import { getVisiblePosts } from "~/server/utils/content";
+import { getVisibleFeed } from "~/server/utils/content";
 
 export default defineEventHandler(async (event) => {
-  const posts = await getVisiblePosts(event);
-  const payload = posts.map((post) => ({
-    title: post.title,
-    slug: post.slug,
-    description: post.description,
-    category: post.category,
-    tags: post.tags,
-    date: post.date,
-    draft: post.draft ?? false
+  const feed = await getVisibleFeed(event);
+  const payload = feed.map((item) => ({
+    title: item.title,
+    slug: item.slug,
+    kind: item.kind,
+    url: item.url,
+    chapterSlug: item.chapterSlug,
+    chapterTitle: item.chapterTitle,
+    description: item.description,
+    category: item.category,
+    tags: item.tags,
+    date: item.date,
+    draft: item.draft ?? false
   }));
 
   setHeader(event, "content-type", "application/json; charset=utf-8");

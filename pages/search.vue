@@ -8,17 +8,21 @@
       type="search"
     />
     <p class="meta">命中 {{ filtered.length }} 条结果</p>
-    <PostCard v-for="item in filtered" :key="item.slug" :post="item" />
+    <PostCard
+      v-for="item in filtered"
+      :key="`${item.kind}:${item.chapterSlug || ''}:${item.slug}`"
+      :item="item"
+    />
   </section>
 </template>
 
 <script setup lang="ts">
 import Fuse from "fuse.js";
-import type { PostItem } from "~/types/post";
+import type { FeedItem } from "~/types/post";
 
 const keyword = ref("");
 
-const { data } = await useFetch<PostItem[]>("/search-index.json", {
+const { data } = await useFetch<FeedItem[]>("/search-index.json", {
   default: () => []
 });
 
@@ -30,14 +34,14 @@ const filtered = computed(() => {
   const engine = new Fuse(list, {
     includeScore: true,
     threshold: 0.35,
-    keys: ["title", "description", "tags"]
+    keys: ["title", "description", "tags", "chapterTitle"]
   });
   return engine.search(keyword.value.trim()).map((row) => row.item);
 });
 
 useSeoMeta({
   title: "搜索",
-  description: "博客全文检索（标题、摘要、标签）。"
+  description: "博客全文检索（普通文章、章节与章节子文章）。"
 });
 </script>
 
@@ -52,4 +56,3 @@ useSeoMeta({
   width: 100%;
 }
 </style>
-

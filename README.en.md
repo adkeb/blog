@@ -19,6 +19,7 @@ Design rule: `Tunnel downtime must not break the public website`.
 ## Implemented Features
 
 - Post list / post detail / tags / search
+- Chapter system: `/chapters`, chapter detail, and chapter child post detail
 - Draft visibility toggle (`NUXT_PUBLIC_SHOW_DRAFTS`)
 - `rss.xml`, `sitemap.xml`, `search-index.json`, `robots.txt`
 - CMS admin panel at `/admin`
@@ -57,3 +58,58 @@ cp ops/cloudflare/tunnel/config.example.yml ops/cloudflare/tunnel/config.yml
 - `ops/cloudflare/tunnel/config.example.yml`
 - `ops/cloudflare/tunnel/access-policies.md`
 - `docs/cloudflare-pages-tunnel.md`
+
+## Chapterized Writing
+
+### Structure
+
+```text
+content/
+  chapters/
+    machine-learning.md
+  chapter-posts/
+    machine-learning/
+      linear-regression.md
+      gradient-descent.md
+```
+
+### Chapter Frontmatter
+
+```yaml
+---
+title: "Machine Learning"
+slug: "machine-learning"
+description: "Chapter index page"
+date: "2026-02-14"
+tags: ["ml"]
+category: "Chapter"
+draft: false
+---
+```
+
+Insert chapter children directory in the chapter body:
+
+```md
+::chapter-children
+::
+```
+
+### Chapter Child Frontmatter
+
+```yaml
+---
+title: "Linear Regression"
+slug: "linear-regression"
+chapterSlug: "machine-learning"
+order: 1
+legacySlugs: ["ml-linear-regression"]
+description: "..."
+date: "2026-02-14"
+draft: false
+---
+```
+
+Rules:
+
+- The file path directory must match `chapterSlug` (field + directory validation).
+- Old links `/posts/:legacySlug` are redirected (301) to `/chapters/:chapterSlug/:slug`.

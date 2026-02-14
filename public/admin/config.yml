@@ -39,3 +39,73 @@ collections:
         widget: markdown
         hint: "若富文本中图片/代码块无法删除，请切换右上角 Markdown 模式直接删除对应块。"
         modes: [raw, rich_text]
+  - name: chapters
+    label: 章节
+    folder: content/chapters
+    create: true
+    extension: md
+    format: frontmatter
+    slug: "{{slug}}"
+    summary: "章节｜{{title}} - {{date}}"
+    fields:
+      - { label: 章节标题, name: title, widget: string }
+      - { label: 章节标识, name: slug, widget: string, hint: "用于 /chapters/:chapterSlug，建议英文短词" }
+      - { label: 摘要, name: description, widget: text }
+      - { label: 发布日期, name: date, widget: datetime, format: "YYYY-MM-DD", date_format: "YYYY-MM-DD", time_format: false }
+      - { label: 更新日期, name: updated, widget: datetime, required: false, format: "YYYY-MM-DD", date_format: "YYYY-MM-DD", time_format: false }
+      - { label: 标签, name: tags, widget: list, field: { label: 标签, name: tag, widget: string } }
+      - { label: 分类, name: category, widget: string, default: Chapter }
+      - { label: 封面, name: cover, widget: image, required: false }
+      - { label: 草稿, name: draft, widget: boolean, default: false }
+      - { label: 显示目录, name: toc, widget: boolean, default: true }
+      - { label: 语言, name: lang, widget: string, default: zh-CN }
+      - label: 正文
+        name: body
+        widget: markdown
+        modes: [raw, rich_text]
+        default: |
+          这是章节导读。
+          
+          ::chapter-children
+          ::
+  - name: chapter_posts
+    label: 章节子文章
+    folder: content/chapter-posts
+    create: true
+    extension: md
+    format: frontmatter
+    slug: "{{chapterSlug}}/{{slug}}"
+    summary: "子文章｜{{chapterSlug}} / {{title}} (第{{order}}节)"
+    fields:
+      - { label: 标题, name: title, widget: string }
+      - { label: 路由标识, name: slug, widget: string, hint: "用于 /chapters/:chapterSlug/:slug" }
+      - {
+          label: 所属章节,
+          name: chapterSlug,
+          widget: relation,
+          collection: chapters,
+          search_fields: [title, slug],
+          value_field: slug,
+          display_fields: [title, slug]
+        }
+      - { label: 章节内序号, name: order, widget: number, value_type: int, min: 1, default: 1 }
+      - { label: 摘要, name: description, widget: text }
+      - { label: 发布日期, name: date, widget: datetime, format: "YYYY-MM-DD", date_format: "YYYY-MM-DD", time_format: false }
+      - { label: 更新日期, name: updated, widget: datetime, required: false, format: "YYYY-MM-DD", date_format: "YYYY-MM-DD", time_format: false }
+      - { label: 标签, name: tags, widget: list, field: { label: 标签, name: tag, widget: string } }
+      - { label: 分类, name: category, widget: string, default: General }
+      - { label: 封面, name: cover, widget: image, required: false }
+      - { label: 草稿, name: draft, widget: boolean, default: false }
+      - { label: 显示目录, name: toc, widget: boolean, default: true }
+      - { label: 语言, name: lang, widget: string, default: zh-CN }
+      - {
+          label: 旧路由兼容 Slugs,
+          name: legacySlugs,
+          widget: list,
+          required: false,
+          hint: "用于 /posts/:slug 的 301 兼容，例如 old-post-slug"
+        }
+      - label: 正文
+        name: body
+        widget: markdown
+        modes: [raw, rich_text]

@@ -24,28 +24,66 @@
 </template>
 
 <script setup lang="ts">
-import type { PostItem } from "~/types/post";
+import type { ChapterItem, ChapterPostItem, PostItem } from "~/types/post";
+import { assertChapterPostDirectory, filterByVisibility, getChapterPostUrl } from "~/utils/posts";
 
 const route = useRoute();
 const config = useRuntimeConfig();
 const slug = computed(() => String(route.params.slug));
 
 const { data } = await useAsyncData(`post-${slug.value}`, async () => {
-  const result = (await queryCollection("posts")
-    .where("slug", "=", slug.value)
-    .first()) as PostItem | null;
-  if (!result) {
-    return null;
+  const result = (await queryCollection("posts").where("slug", "=", slug.value).first()) as PostItem | null;
+  if (result) {
+    if (result.draft && !config.public.showDrafts) {
+      return { mode: "not_found" } as const;
+    }
+    return { mode: "post", post: result } as const;
   }
 
-  if (result.draft && !config.public.showDrafts) {
-    return null;
+  const [chapterPosts, chapters] = await Promise.all([
+    queryCollection("chapterPosts").all() as Promise<ChapterPostItem[]>,
+    queryCollection("chapters").all() as Promise<ChapterItem[]>
+  ]);
+
+  const visibleChapters = new Set(
+    filterByVisibility(chapters, config.public.showDrafts).map((chapter) => chapter.slug)
+  );
+  const matches = filterByVisibility(chapterPosts, config.public.showDrafts).filter((item) =>
+    visibleChapters.has(item.chapterSlug) &&
+    (item.legacySlugs || []).includes(slug.value)
+  );
+
+  for (const item of matches) {
+    assertChapterPostDirectory(item);
   }
-  return result;
+
+  if (matches.length > 1) {
+    throw createError({
+      statusCode: 500,
+      statusMessage: `legacySlugs 冲突：${slug.value}`
+    });
+  }
+
+  if (matches.length === 1) {
+    return {
+      mode: "redirect",
+      to: getChapterPostUrl(matches[0].chapterSlug, matches[0].slug)
+    } as const;
+  }
+
+  return { mode: "not_found" } as const;
 });
 
-const post = computed(() => data.value as PostItem | null);
-const resolvedPost = post.value;
+const postData = computed(() => data.value);
+
+if (postData.value?.mode === "redirect") {
+  await navigateTo(postData.value.to, {
+    redirectCode: 301
+  });
+}
+
+const post = computed(() => (postData.value?.mode === "post" ? postData.value.post : null));
+const resolvedPost = post.value as PostItem | null;
 
 if (!resolvedPost) {
   throw createError({

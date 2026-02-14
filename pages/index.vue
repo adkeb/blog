@@ -14,23 +14,37 @@
 
   <section>
     <h2>最新文章</h2>
-    <PostCard v-for="post in latestPosts" :key="post.slug" :post="post" />
+    <PostCard
+      v-for="item in latestPosts"
+      :key="`${item.kind}:${item.chapterSlug || ''}:${item.slug}`"
+      :item="item"
+    />
     <p v-if="latestPosts.length === 0" class="meta">暂无文章。</p>
   </section>
 </template>
 
 <script setup lang="ts">
-import type { PostItem } from "~/types/post";
-import { filterByVisibility, sortPostsDesc } from "~/utils/posts";
+import type { ChapterItem, ChapterPostItem, FeedItem, PostItem } from "~/types/post";
+import { buildUnifiedFeed } from "~/utils/posts";
 
 const config = useRuntimeConfig();
 
 const { data } = await useAsyncData("home-posts", async () => {
-  const posts = (await queryCollection("posts").all()) as PostItem[];
-  return sortPostsDesc(filterByVisibility(posts, config.public.showDrafts)).slice(0, 6);
+  const [posts, chapters, chapterPosts] = await Promise.all([
+    queryCollection("posts").all() as Promise<PostItem[]>,
+    queryCollection("chapters").all() as Promise<ChapterItem[]>,
+    queryCollection("chapterPosts").all() as Promise<ChapterPostItem[]>
+  ]);
+
+  return buildUnifiedFeed({
+    posts,
+    chapters,
+    chapterPosts,
+    showDrafts: config.public.showDrafts
+  }).slice(0, 6);
 });
 
-const latestPosts = computed(() => data.value ?? []);
+const latestPosts = computed(() => (data.value ?? []) as FeedItem[]);
 
 useSeoMeta({
   title: "首页",
@@ -80,4 +94,3 @@ useSeoMeta({
   color: var(--text);
 }
 </style>
-

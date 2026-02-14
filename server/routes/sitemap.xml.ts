@@ -1,22 +1,22 @@
-import { getVisiblePosts } from "~/server/utils/content";
+import { getVisibleFeed } from "~/server/utils/content";
 import { extractTags } from "~/utils/posts";
 import { escapeXml, stripTrailingSlash, toAbsoluteUrl } from "~/utils/site";
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event);
   const siteUrl = stripTrailingSlash(config.public.siteUrl);
-  const posts = await getVisiblePosts(event);
-  const tags = extractTags(posts);
+  const feed = await getVisibleFeed(event);
+  const tags = extractTags(feed);
 
-  const staticPaths = ["/", "/posts", "/about", "/search"];
+  const staticPaths = ["/", "/posts", "/chapters", "/about", "/search"];
   const urls = new Set<string>();
 
   for (const path of staticPaths) {
     urls.add(toAbsoluteUrl(siteUrl, path));
   }
 
-  for (const post of posts) {
-    urls.add(toAbsoluteUrl(siteUrl, `/posts/${encodeURIComponent(post.slug)}`));
+  for (const item of feed) {
+    urls.add(toAbsoluteUrl(siteUrl, item.url));
   }
 
   for (const tag of tags) {
@@ -36,4 +36,3 @@ ${body}
   setHeader(event, "content-type", "application/xml; charset=utf-8");
   return xml;
 });
-

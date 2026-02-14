@@ -1,22 +1,23 @@
-import { getVisiblePosts } from "~/server/utils/content";
+import { getVisibleFeed } from "~/server/utils/content";
 import { escapeXml, stripTrailingSlash, toAbsoluteUrl } from "~/utils/site";
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event);
   const siteUrl = stripTrailingSlash(config.public.siteUrl);
-  const posts = await getVisiblePosts(event);
+  const feed = await getVisibleFeed(event);
 
-  const items = posts
-    .map((post) => {
-      const link = toAbsoluteUrl(siteUrl, `/posts/${encodeURIComponent(post.slug)}`);
-      const description = escapeXml(post.description || "");
+  const items = feed
+    .map((item) => {
+      const link = toAbsoluteUrl(siteUrl, item.url);
+      const description = escapeXml(item.description || "");
       return `
   <item>
-    <title>${escapeXml(post.title)}</title>
+    <title>${escapeXml(item.title)}</title>
     <link>${link}</link>
     <guid>${link}</guid>
-    <pubDate>${new Date(post.date).toUTCString()}</pubDate>
+    <pubDate>${new Date(item.date).toUTCString()}</pubDate>
     <description>${description}</description>
+    <category>${escapeXml(item.kind)}</category>
   </item>`;
     })
     .join("\n");
@@ -35,4 +36,3 @@ ${items}
   setHeader(event, "content-type", "application/rss+xml; charset=utf-8");
   return xml;
 });
-
