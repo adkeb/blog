@@ -12,12 +12,9 @@ CMS_ORIGIN = "https://www.example.com"
 # Must be exactly your worker callback endpoint.
 GITHUB_REDIRECT_URI = "https://decap-oauth.example.workers.dev/callback"
 
-# Random long string used to sign OAuth state.
-OAUTH_STATE_SECRET = "replace-with-32-char-random-string"
-
 # GitHub OAuth app client ID.
 GITHUB_CLIENT_ID = "replace-with-github-client-id"
 
-# GITHUB_CLIENT_SECRET should be set as a secret:
+# GITHUB_CLIENT_SECRET and OAUTH_STATE_SECRET should be set as secrets:
 # wrangler secret put GITHUB_CLIENT_SECRET
-
+# wrangler secret put OAUTH_STATE_SECRET
