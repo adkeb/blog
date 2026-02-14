@@ -6,7 +6,12 @@
     <title>Blog CMS</title>
   </head>
   <body>
+    <script>
+      try {
+        // Keep markdown editor as default to avoid rich-text block editing issues.
+        localStorage.setItem("cms.md-mode", "raw");
+      } catch (_) {}
+    </script>
     <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
   </body>
 </html>
-

@@ -82,4 +82,24 @@ backend:
    - 检查 `repo` 是否 `adkeb/blog`，GitHub App 权限是否给到该仓库。
 3. `Invalid state`  
    - 检查 `OAUTH_STATE_SECRET` 是否配置且没有改动。
-
+4. `GitHub 已授权，但 /admin 仍停留在登录页`  
+   - 现象：弹窗显示 GitHub 授权成功，主页面不进入 CMS。  
+   - 根因：OAuth 弹窗握手消息缺失或被拦截。Decap 需要先收到 `authorizing:github`，再接收 `authorization:github:success:*`。  
+   - 检查项：
+     1. `public/admin/config.yml` 已配置：
+        - `base_url: https://<your-worker-domain>`
+        - `auth_endpoint: auth`
+     2. Worker `/auth` 必须返回握手页（不是直接 302）。  
+        可用命令验证：
+        ```bash
+        curl -fsSL "https://<your-worker-domain>/auth?provider=github&site_id=<your-site>&scope=repo" | grep "authorizing:github"
+        ```
+     3. GitHub OAuth App 的 callback 与 Worker 完全一致：  
+        `https://<your-worker-domain>/callback`
+     4. 浏览器允许弹窗，且未拦截第三方脚本。
+   - 处理步骤：
+     1. 重新部署 Worker：`cd ops/decap-oauth && npx wrangler deploy`
+     2. 在 `/admin` 强制刷新（`Ctrl+F5`）
+     3. 清理这两个域名的站点数据后重试：  
+        - `https://www.<your-domain>`  
+        - `https://<your-worker-domain>`
