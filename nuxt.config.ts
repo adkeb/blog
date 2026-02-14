@@ -18,7 +18,8 @@ const giscusEmitMetadata =
 const giscusInputPosition =
   process.env.GISCUS_INPUT_POSITION || process.env.NUXT_PUBLIC_GISCUS_INPUT_POSITION || "top";
 const giscusTheme = process.env.GISCUS_THEME || process.env.NUXT_PUBLIC_GISCUS_THEME || "light";
-const adminGithubLogin = process.env.NUXT_PUBLIC_ADMIN_GITHUB_LOGIN || "";
+const inferredAdminLoginFromRepo = giscusRepo.includes("/") ? giscusRepo.split("/")[0] : "";
+const adminGithubLogin = (process.env.NUXT_PUBLIC_ADMIN_GITHUB_LOGIN || inferredAdminLoginFromRepo).trim();
 const adminOauthBaseUrl =
   process.env.NUXT_PUBLIC_ADMIN_OAUTH_BASE_URL || "https://decap-github-oauth.xuyang020128.workers.dev";
 

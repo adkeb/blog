@@ -1,0 +1,14 @@
+{
+  "brandName": "Personal Blog",
+  "heroEyebrow": "Cloudflare Pages + Tunnel",
+  "heroTitle": "个人技术博客",
+  "heroDescription": "这是一个以技术沉淀为目标的博客模板。公开站点部署在 Cloudflare Pages，私有预览和后台通过 Cloudflare Tunnel 暴露。",
+  "footerText": "Personal Blog. Built with Nuxt + Cloudflare Pages.",
+  "codeTheme": {
+    "codeBg": "#0f172a",
+    "codeText": "#e2e8f0",
+    "codeBorder": "#1e293b",
+    "inlineCodeBg": "#e2e8f0",
+    "inlineCodeText": "#0f172a"
+  }
+}

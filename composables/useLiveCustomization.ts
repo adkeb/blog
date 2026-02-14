@@ -101,28 +101,55 @@ function saveState(state: LiveCustomizationState): void {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
+async function fetchSharedState(): Promise<LiveCustomizationState> {
+  if (!import.meta.client) {
+    return cloneDefaults();
+  }
+
+  try {
+    const resp = await fetch("/site-settings.json", {
+      cache: "no-store"
+    });
+    if (!resp.ok) {
+      return cloneDefaults();
+    }
+    const body = (await resp.json()) as unknown;
+    return normalizeState(body);
+  } catch {
+    return cloneDefaults();
+  }
+}
+
 export function useLiveCustomization() {
   const state = useState<LiveCustomizationState>("live-customization", () => cloneDefaults());
   const initialized = useState<boolean>("live-customization-initialized", () => false);
 
-  const init = () => {
+  const init = async () => {
     if (!import.meta.client || initialized.value) {
       return;
     }
 
+    let next = await fetchSharedState();
+
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (raw) {
       try {
-        const parsed = JSON.parse(raw) as unknown;
-        state.value = normalizeState(parsed);
+        const parsed = JSON.parse(raw) as Record<string, unknown>;
+        next = normalizeState({
+          ...next,
+          ...parsed,
+          codeTheme: {
+            ...next.codeTheme,
+            ...(parsed.codeTheme as Record<string, unknown> | undefined)
+          }
+        });
       } catch {
-        state.value = cloneDefaults();
+        next = normalizeState(next);
       }
-    } else {
-      state.value = cloneDefaults();
     }
 
-    applyCodeTheme(state.value.codeTheme);
+    state.value = next;
+    applyCodeTheme(next.codeTheme);
     initialized.value = true;
   };
 

@@ -16,6 +16,9 @@
         <p class="meta">
           仅管理员可用。请用 GitHub 管理员账号认证。
         </p>
+        <p v-if="adminLoginConfigured" class="meta">
+          目标管理员账号：{{ configuredAdminLogin }}
+        </p>
         <p v-if="!adminLoginConfigured" class="meta error">
           未配置 `NUXT_PUBLIC_ADMIN_GITHUB_LOGIN`，无法校验管理员身份。
         </p>
@@ -92,10 +95,48 @@
           <NuxtLink class="ghost" :to="adminEntryUrl" target="_blank">
             编辑当前页面内容
           </NuxtLink>
+          <button
+            class="primary"
+            type="button"
+            :disabled="publishLoading || !githubRepoConfigured"
+            @click="publishLiveCustomization"
+          >
+            {{ publishLoading ? "发布中..." : "保存并发布（所有访客）" }}
+          </button>
           <button class="ghost danger" type="button" @click="resetAll">
             重置实时改动
           </button>
         </div>
+
+        <h3>当前页面源码直改（免进 /admin）</h3>
+        <p class="meta">
+          当前路径：{{ pageSourcePath || "当前页不支持源码编辑" }}
+        </p>
+        <div class="actions">
+          <button
+            class="ghost"
+            type="button"
+            :disabled="pageSourceLoading || !pageSourcePath || !githubRepoConfigured"
+            @click="loadPageSource"
+          >
+            {{ pageSourceLoading ? "加载中..." : "加载源码" }}
+          </button>
+          <button
+            class="primary"
+            type="button"
+            :disabled="pageSourceSaving || !pageSourceSha || !pageSourcePath || !githubRepoConfigured"
+            @click="savePageSource"
+          >
+            {{ pageSourceSaving ? "保存中..." : "保存源码并发布" }}
+          </button>
+        </div>
+        <textarea
+          v-model="pageSourceText"
+          rows="10"
+          placeholder="点击“加载源码”后可直接修改 Markdown；保存会提交到 GitHub main 分支。"
+        />
+        <p v-if="saveSuccess" class="meta success">{{ saveSuccess }}</p>
+        <p v-if="saveError" class="meta error">{{ saveError }}</p>
       </template>
     </section>
   </div>
@@ -108,6 +149,7 @@ type ThemePresetName = "default" | "midnight" | "forest";
 
 interface AuthSession {
   login: string;
+  token?: string;
 }
 
 const AUTH_SESSION_KEY = "blog-admin-auth-session-v1";
@@ -121,6 +163,15 @@ const open = ref(false);
 const authLoading = ref(false);
 const authError = ref("");
 const adminLogin = ref("");
+const adminToken = ref("");
+const saveError = ref("");
+const saveSuccess = ref("");
+const publishLoading = ref(false);
+const pageSourceLoading = ref(false);
+const pageSourceSaving = ref(false);
+const pageSourcePath = ref("");
+const pageSourceSha = ref("");
+const pageSourceText = ref("");
 const draft = ref<LiveCustomizationState>({
   brandName: "",
   heroEyebrow: "",
@@ -147,6 +198,9 @@ const oauthBaseUrl = computed(() => {
   const value = String(runtimeConfig.public.adminOauthBaseUrl || "").trim();
   return value.length > 0 ? value : "https://decap-github-oauth.xuyang020128.workers.dev";
 });
+const githubRepo = computed(() => String(runtimeConfig.public.giscus?.repo || "").trim());
+const githubRepoConfigured = computed(() => githubRepo.value.includes("/"));
+const githubContentBranch = computed(() => "main");
 
 const adminEntryUrl = computed(() => {
   const path = route.path || "/";
@@ -234,6 +288,111 @@ function clearAuthSession(): void {
     return;
   }
   window.sessionStorage.removeItem(AUTH_SESSION_KEY);
+}
+
+function encodePath(path: string): string {
+  return path
+    .split("/")
+    .filter(Boolean)
+    .map((segment) => encodeURIComponent(segment))
+    .join("/");
+}
+
+function utf8ToBase64(input: string): string {
+  const bytes = new TextEncoder().encode(input);
+  let binary = "";
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte);
+  }
+  return btoa(binary);
+}
+
+function base64ToUtf8(input: string): string {
+  const normalized = input.replace(/\n/g, "");
+  const binary = atob(normalized);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return new TextDecoder().decode(bytes);
+}
+
+function resolvePageContentPath(): string {
+  const path = route.path || "/";
+  const postMatch = path.match(/^\/posts\/([^/]+)$/);
+  if (postMatch) {
+    return `content/posts/${decodeURIComponent(postMatch[1])}.md`;
+  }
+
+  const chapterMatch = path.match(/^\/chapters\/([^/]+)$/);
+  if (chapterMatch) {
+    return `content/chapters/${decodeURIComponent(chapterMatch[1])}.md`;
+  }
+
+  const chapterPostMatch = path.match(/^\/chapters\/([^/]+)\/([^/]+)$/);
+  if (chapterPostMatch) {
+    return `content/chapter-posts/${decodeURIComponent(chapterPostMatch[1])}/${decodeURIComponent(chapterPostMatch[2])}.md`;
+  }
+
+  return "";
+}
+
+interface GitHubContentResponse {
+  sha: string;
+  content: string;
+  encoding?: string;
+}
+
+async function getRepoContent(path: string): Promise<GitHubContentResponse> {
+  if (!adminToken.value) {
+    throw new Error("登录态缺少访问令牌，请重新点击“使用 GitHub 管理员认证”。");
+  }
+  const encodedPath = encodePath(path);
+  const url = `https://api.github.com/repos/${githubRepo.value}/contents/${encodedPath}?ref=${encodeURIComponent(githubContentBranch.value)}`;
+  const resp = await fetch(url, {
+    headers: {
+      Accept: "application/vnd.github+json",
+      Authorization: `Bearer ${adminToken.value}`
+    }
+  });
+
+  if (!resp.ok) {
+    throw new Error(`读取仓库文件失败（${resp.status}）。`);
+  }
+
+  return (await resp.json()) as GitHubContentResponse;
+}
+
+async function putRepoContent(input: {
+  path: string;
+  content: string;
+  sha: string;
+  message: string;
+}): Promise<void> {
+  if (!adminToken.value) {
+    throw new Error("登录态缺少访问令牌，请重新点击“使用 GitHub 管理员认证”。");
+  }
+  const encodedPath = encodePath(input.path);
+  const url = `https://api.github.com/repos/${githubRepo.value}/contents/${encodedPath}`;
+  const resp = await fetch(url, {
+    method: "PUT",
+    headers: {
+      Accept: "application/vnd.github+json",
+      Authorization: `Bearer ${adminToken.value}`,
+      "content-type": "application/json"
+    },
+    body: JSON.stringify({
+      message: input.message,
+      content: utf8ToBase64(input.content),
+      sha: input.sha,
+      branch: githubContentBranch.value
+    })
+  });
+
+  if (!resp.ok) {
+    const detail = await resp.text();
+    throw new Error(`提交仓库文件失败（${resp.status}）: ${detail}`);
+  }
 }
 
 async function waitForOAuthResult(popup: Window): Promise<string> {
@@ -373,10 +532,12 @@ async function loginWithGitHub(): Promise<void> {
     }
 
     adminLogin.value = login;
-    writeAuthSession({ login });
+    adminToken.value = token;
+    writeAuthSession({ login, token });
   } catch (error) {
     authError.value = error instanceof Error ? error.message : "认证失败，请重试。";
     adminLogin.value = "";
+    adminToken.value = "";
     clearAuthSession();
   } finally {
     authLoading.value = false;
@@ -385,17 +546,94 @@ async function loginWithGitHub(): Promise<void> {
 
 function logout(): void {
   adminLogin.value = "";
+  adminToken.value = "";
   authError.value = "";
+  saveError.value = "";
+  saveSuccess.value = "";
   clearAuthSession();
 }
 
+async function publishLiveCustomization(): Promise<void> {
+  if (!isAdmin.value || !githubRepoConfigured.value) {
+    return;
+  }
+  saveError.value = "";
+  saveSuccess.value = "";
+  publishLoading.value = true;
+
+  try {
+    const path = "public/site-settings.json";
+    const current = await getRepoContent(path);
+    const nextContent = JSON.stringify(state.value, null, 2) + "\n";
+    await putRepoContent({
+      path,
+      content: nextContent,
+      sha: current.sha,
+      message: "chore: update live site customization"
+    });
+    saveSuccess.value = "已提交到仓库，Cloudflare Pages 正在自动部署。";
+  } catch (error) {
+    saveError.value = error instanceof Error ? error.message : "发布失败。";
+  } finally {
+    publishLoading.value = false;
+  }
+}
+
+async function loadPageSource(): Promise<void> {
+  if (!isAdmin.value || !pageSourcePath.value || !githubRepoConfigured.value) {
+    return;
+  }
+  saveError.value = "";
+  saveSuccess.value = "";
+  pageSourceLoading.value = true;
+
+  try {
+    const current = await getRepoContent(pageSourcePath.value);
+    pageSourceSha.value = current.sha;
+    pageSourceText.value = base64ToUtf8(current.content || "");
+  } catch (error) {
+    saveError.value = error instanceof Error ? error.message : "加载源码失败。";
+  } finally {
+    pageSourceLoading.value = false;
+  }
+}
+
+async function savePageSource(): Promise<void> {
+  if (!isAdmin.value || !pageSourcePath.value || !pageSourceSha.value || !githubRepoConfigured.value) {
+    return;
+  }
+  saveError.value = "";
+  saveSuccess.value = "";
+  pageSourceSaving.value = true;
+
+  try {
+    await putRepoContent({
+      path: pageSourcePath.value,
+      content: pageSourceText.value.endsWith("\n") ? pageSourceText.value : `${pageSourceText.value}\n`,
+      sha: pageSourceSha.value,
+      message: `docs: update ${pageSourcePath.value} from live panel`
+    });
+
+    const refreshed = await getRepoContent(pageSourcePath.value);
+    pageSourceSha.value = refreshed.sha;
+    saveSuccess.value = "页面源码已提交到仓库，Cloudflare Pages 正在自动部署。";
+  } catch (error) {
+    saveError.value = error instanceof Error ? error.message : "保存源码失败。";
+  } finally {
+    pageSourceSaving.value = false;
+  }
+}
+
 onMounted(() => {
-  init();
-  draft.value = cloneState(state.value);
+  void init().then(() => {
+    draft.value = cloneState(state.value);
+  });
+  pageSourcePath.value = resolvePageContentPath();
 
   const session = readAuthSession();
   if (session && session.login.toLowerCase() === configuredAdminLogin.value) {
     adminLogin.value = session.login;
+    adminToken.value = typeof session.token === "string" ? session.token : "";
   }
 });
 
@@ -405,6 +643,15 @@ watch(
     draft.value = cloneState(next);
   },
   { deep: true }
+);
+
+watch(
+  () => route.path,
+  () => {
+    pageSourcePath.value = resolvePageContentPath();
+    pageSourceSha.value = "";
+    pageSourceText.value = "";
+  }
 );
 </script>
 
@@ -509,11 +756,16 @@ input[type="color"] {
 
 .actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
   margin-top: 0.9rem;
 }
 
 .error {
   color: #ef4444;
+}
+
+.success {
+  color: #0f766e;
 }
 </style>

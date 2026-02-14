@@ -1,4 +1,4 @@
 export default defineNuxtPlugin(() => {
   const { init } = useLiveCustomization();
-  init();
+  void init();
 });
