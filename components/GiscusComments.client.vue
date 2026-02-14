@@ -1,22 +1,77 @@
 <template>
   <section v-if="enabled" class="surface comments">
     <h2>评论</h2>
-    <div ref="container" />
+    <ClientOnly>
+      <Giscus
+        :key="widgetKey"
+        :repo="giscus.repo"
+        :repo-id="giscus.repoId"
+        :category="giscus.category"
+        :category-id="giscus.categoryId"
+        :mapping="giscus.mapping"
+        :strict="giscus.strict"
+        :reactions-enabled="giscus.reactionsEnabled"
+        :emit-metadata="giscus.emitMetadata"
+        :input-position="giscus.inputPosition"
+        :theme="resolvedTheme"
+        lang="zh-CN"
+        loading="eager"
+      />
+      <template #fallback>
+        <p class="meta">评论加载中...</p>
+      </template>
+    </ClientOnly>
   </section>
 </template>
 
 <script setup lang="ts">
-const container = ref<HTMLElement | null>(null);
+import Giscus from "@giscus/vue";
+import type { BooleanString, InputPosition, Mapping, Repo } from "@giscus/vue";
+
 const route = useRoute();
 const config = useRuntimeConfig();
 const { theme } = useTheme();
-const mountedKey = ref("");
-let ensureTimer: ReturnType<typeof window.setTimeout> | null = null;
-let retryCount = 0;
 
 const enabled = computed(() => {
   const g = config.public.giscus;
-  return Boolean(g.repo && g.repoId && g.category && g.categoryId);
+  const repo = String(g.repo || "");
+  return Boolean(repo.includes("/") && g.repoId && g.category && g.categoryId);
+});
+
+function toBooleanString(value: unknown, fallback: BooleanString): BooleanString {
+  const text = String(value ?? "");
+  if (text === "1") {
+    return "1";
+  }
+  if (text === "0") {
+    return "0";
+  }
+  return fallback;
+}
+
+function toInputPosition(value: unknown): InputPosition {
+  return String(value) === "top" ? "top" : "bottom";
+}
+
+function toMapping(value: unknown): Mapping {
+  const text = String(value ?? "pathname");
+  const values: Mapping[] = ["url", "title", "og:title", "specific", "number", "pathname"];
+  return values.includes(text as Mapping) ? (text as Mapping) : "pathname";
+}
+
+const giscus = computed(() => {
+  const g = config.public.giscus;
+  return {
+    repo: String(g.repo || "") as Repo,
+    repoId: String(g.repoId || ""),
+    category: String(g.category || ""),
+    categoryId: String(g.categoryId || ""),
+    mapping: toMapping(g.mapping),
+    strict: toBooleanString(g.strict, "0"),
+    reactionsEnabled: toBooleanString(g.reactionsEnabled, "1"),
+    emitMetadata: toBooleanString(g.emitMetadata, "0"),
+    inputPosition: toInputPosition(g.inputPosition)
+  };
 });
 
 const resolvedTheme = computed(() => {
@@ -27,121 +82,7 @@ const resolvedTheme = computed(() => {
   return configured;
 });
 
-function postThemeToIframe(nextTheme: string): boolean {
-  const iframe = container.value?.querySelector<HTMLIFrameElement>("iframe.giscus-frame");
-  if (!iframe?.contentWindow) {
-    return false;
-  }
-
-  iframe.contentWindow.postMessage(
-    {
-      giscus: {
-        setConfig: {
-          theme: nextTheme
-        }
-      }
-    },
-    "https://giscus.app"
-  );
-  return true;
-}
-
-function hasGiscusFrame(): boolean {
-  return Boolean(container.value?.querySelector("iframe.giscus-frame"));
-}
-
-function clearEnsureTimer(): void {
-  if (ensureTimer) {
-    window.clearTimeout(ensureTimer);
-    ensureTimer = null;
-  }
-}
-
-function scheduleEnsureFrame(key: string): void {
-  clearEnsureTimer();
-  ensureTimer = window.setTimeout(() => {
-    if (mountedKey.value !== key) {
-      return;
-    }
-
-    if (hasGiscusFrame()) {
-      retryCount = 0;
-      return;
-    }
-
-    if (retryCount >= 2) {
-      return;
-    }
-
-    retryCount += 1;
-    mountGiscus(true);
-  }, 3200);
-}
-
-function mountGiscus(force = false) {
-  if (!enabled.value || !container.value) {
-    return;
-  }
-
-  const key = `${route.path}::${resolvedTheme.value}`;
-  const hasFrame = hasGiscusFrame();
-  if (!force && hasFrame && mountedKey.value === key) {
-    return;
-  }
-
-  container.value.innerHTML = "";
-  const script = document.createElement("script");
-  script.src = "https://giscus.app/client.js";
-  script.async = true;
-  script.crossOrigin = "anonymous";
-
-  const g = config.public.giscus;
-  script.setAttribute("data-repo", g.repo);
-  script.setAttribute("data-repo-id", g.repoId);
-  script.setAttribute("data-category", g.category);
-  script.setAttribute("data-category-id", g.categoryId);
-  script.setAttribute("data-mapping", g.mapping);
-  script.setAttribute("data-strict", g.strict);
-  script.setAttribute("data-reactions-enabled", g.reactionsEnabled);
-  script.setAttribute("data-emit-metadata", g.emitMetadata);
-  script.setAttribute("data-input-position", g.inputPosition);
-  script.setAttribute("data-theme", resolvedTheme.value);
-  script.setAttribute("data-lang", "zh-CN");
-  script.setAttribute("data-loading", "eager");
-
-  script.addEventListener("error", () => {
-    scheduleEnsureFrame(key);
-  });
-
-  container.value.appendChild(script);
-  mountedKey.value = key;
-  scheduleEnsureFrame(key);
-}
-
-onMounted(() => {
-  mountGiscus(true);
-});
-
-onBeforeUnmount(() => {
-  clearEnsureTimer();
-});
-
-watch(
-  () => route.path,
-  () => {
-    retryCount = 0;
-    mountGiscus(true);
-  }
-);
-
-watch(
-  () => resolvedTheme.value,
-  (nextTheme) => {
-    if (!postThemeToIframe(nextTheme)) {
-      mountGiscus(true);
-    }
-  }
-);
+const widgetKey = computed(() => `${route.path}::${resolvedTheme.value}`);
 </script>
 
 <style scoped>
