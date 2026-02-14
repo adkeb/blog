@@ -25,6 +25,7 @@
 
 <script setup lang="ts">
 import type { ChapterItem } from "~/types/post";
+import { getChapterUrl } from "~/utils/posts";
 
 const route = useRoute();
 const config = useRuntimeConfig();
@@ -53,6 +54,16 @@ if (!resolvedChapter) {
     statusMessage: "章节不存在"
   });
 }
+
+const { touch } = useReadingHistory();
+onMounted(() => {
+  touch({
+    url: getChapterUrl(chapterSlug.value),
+    title: resolvedChapter.title,
+    kind: "chapter",
+    category: resolvedChapter.category
+  });
+});
 
 const canonical = `${config.public.siteUrl.replace(/\/$/, "")}/chapters/${encodeURIComponent(chapterSlug.value)}`;
 useSeoMeta({

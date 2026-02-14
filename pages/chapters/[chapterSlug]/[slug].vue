@@ -112,6 +112,18 @@ if (!payload.value) {
   });
 }
 
+const { touch } = useReadingHistory();
+onMounted(() => {
+  touch({
+    url: getChapterPostUrl(chapterSlug.value, slug.value),
+    title: payload.value!.entry.title,
+    kind: "chapter_post",
+    category: payload.value!.entry.category,
+    chapterSlug: payload.value!.chapter.slug,
+    chapterTitle: payload.value!.chapter.title
+  });
+});
+
 const canonical = `${config.public.siteUrl.replace(/\/$/, "")}${getChapterPostUrl(chapterSlug.value, slug.value)}`;
 useSeoMeta({
   title: payload.value.entry.title,

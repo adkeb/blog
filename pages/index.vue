@@ -14,6 +14,7 @@
 
   <section>
     <h2>最新文章</h2>
+    <RecentReads />
     <PostCard
       v-for="item in latestPosts"
       :key="`${item.kind}:${item.chapterSlug || ''}:${item.slug}`"

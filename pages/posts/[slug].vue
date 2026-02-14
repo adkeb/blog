@@ -29,7 +29,8 @@ import {
   assertChapterPostDirectory,
   filterByVisibility,
   getChapterPostLeafSlug,
-  getChapterPostUrl
+  getChapterPostUrl,
+  getPostUrl
 } from "~/utils/posts";
 
 const route = useRoute();
@@ -96,6 +97,16 @@ if (!resolvedPost) {
     statusMessage: "文章不存在"
   });
 }
+
+const { touch } = useReadingHistory();
+onMounted(() => {
+  touch({
+    url: getPostUrl(slug.value),
+    title: resolvedPost.title,
+    kind: "post",
+    category: resolvedPost.category
+  });
+});
 
 const canonical = `${config.public.siteUrl.replace(/\/$/, "")}/posts/${encodeURIComponent(slug.value)}`;
 useSeoMeta({
