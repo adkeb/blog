@@ -32,12 +32,12 @@
     <ContentRenderer class="prose" :value="entry" />
 
     <nav class="chapter-nav">
-      <NuxtLink v-if="prev" :to="getChapterPostUrl(chapter.slug, prev.slug)">
+      <NuxtLink v-if="prev" :to="getChapterPostUrl(chapter.slug, getChapterPostLeafSlug(prev))">
         ← 上一篇：{{ prev.title }}
       </NuxtLink>
       <span v-else class="meta">← 已是第一篇</span>
 
-      <NuxtLink v-if="next" :to="getChapterPostUrl(chapter.slug, next.slug)">
+      <NuxtLink v-if="next" :to="getChapterPostUrl(chapter.slug, getChapterPostLeafSlug(next))">
         下一篇：{{ next.title }} →
       </NuxtLink>
       <span v-else class="meta">已是最后一篇 →</span>
@@ -52,6 +52,7 @@ import type { ChapterItem, ChapterPostItem } from "~/types/post";
 import {
   assertChapterPostDirectory,
   filterByVisibility,
+  getChapterPostLeafSlug,
   getChapterPostUrl,
   getChapterUrl,
   sortChapterChildren
@@ -85,7 +86,7 @@ const { data } = await useAsyncData(`chapter-post-${chapterSlug.value}-${slug.va
     assertChapterPostDirectory(child);
   }
 
-  const index = children.findIndex((item) => item.slug === slug.value);
+  const index = children.findIndex((item) => getChapterPostLeafSlug(item) === slug.value);
   if (index === -1) {
     return null;
   }

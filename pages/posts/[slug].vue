@@ -25,7 +25,12 @@
 
 <script setup lang="ts">
 import type { ChapterItem, ChapterPostItem, PostItem } from "~/types/post";
-import { assertChapterPostDirectory, filterByVisibility, getChapterPostUrl } from "~/utils/posts";
+import {
+  assertChapterPostDirectory,
+  filterByVisibility,
+  getChapterPostLeafSlug,
+  getChapterPostUrl
+} from "~/utils/posts";
 
 const route = useRoute();
 const config = useRuntimeConfig();
@@ -67,7 +72,7 @@ const { data } = await useAsyncData(`post-${slug.value}`, async () => {
   if (matches.length === 1) {
     return {
       mode: "redirect",
-      to: getChapterPostUrl(matches[0].chapterSlug, matches[0].slug)
+      to: getChapterPostUrl(matches[0].chapterSlug, getChapterPostLeafSlug(matches[0]))
     } as const;
   }
 

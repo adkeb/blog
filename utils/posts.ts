@@ -47,6 +47,25 @@ export function getChapterPostUrl(chapterSlug: string, postSlug: string): string
   return `${getChapterUrl(chapterSlug)}/${encodeURIComponent(postSlug)}`;
 }
 
+function getLeafFromPath(path?: string): string {
+  if (!path) {
+    return "";
+  }
+  const parts = path.split("/").filter(Boolean);
+  return parts[parts.length - 1] || "";
+}
+
+export function getChapterPostLeafSlug(post: Pick<ChapterPostItem, "slug" | "path" | "_path">): string {
+  const fromPath = getLeafFromPath(post.path || post._path);
+  if (fromPath) {
+    return fromPath;
+  }
+
+  const raw = String(post.slug || "");
+  const parts = raw.split("/").filter(Boolean);
+  return parts.length > 0 ? parts[parts.length - 1] : raw;
+}
+
 export function getChapterDirectoryFromPath(path?: string): string | null {
   if (!path) {
     return null;
@@ -137,7 +156,7 @@ export function buildUnifiedFeed(input: {
       ...post,
       kind: "chapter_post",
       chapterTitle: visibleChapter.title,
-      url: getChapterPostUrl(post.chapterSlug, post.slug)
+      url: getChapterPostUrl(post.chapterSlug, getChapterPostLeafSlug(post))
     });
   }
 

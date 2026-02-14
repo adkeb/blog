@@ -2,10 +2,10 @@
   <section class="chapter-children">
     <h2>章节目录</h2>
     <div v-if="children.length > 0" class="grid">
-      <article v-for="child in children" :key="child.slug" class="surface card">
+      <article v-for="child in children" :key="child.path || child._path || child.slug" class="surface card">
         <p class="order">第 {{ child.order }} 节</p>
         <h3>
-          <NuxtLink :to="getChapterPostUrl(chapterSlug, child.slug)">
+          <NuxtLink :to="getChapterPostUrl(chapterSlug, getChapterPostLeafSlug(child))">
             {{ child.title }}
           </NuxtLink>
         </h3>
@@ -22,6 +22,7 @@ import type { ChapterPostItem } from "~/types/post";
 import {
   assertChapterPostDirectory,
   filterByVisibility,
+  getChapterPostLeafSlug,
   getChapterPostUrl,
   sortChapterChildren
 } from "~/utils/posts";
