@@ -24,23 +24,22 @@
 </template>
 
 <script setup lang="ts">
-import type { ChapterItem, ChapterPostItem, FeedItem, PostItem } from "~/types/post";
+import type { ChapterItem, FeedItem, PostItem } from "~/types/post";
 import { buildUnifiedFeed } from "~/utils/posts";
 
 const config = useRuntimeConfig();
 
 const { data } = await useAsyncData("home-posts", async () => {
-  const [posts, chapters, chapterPosts] = await Promise.all([
+  const [posts, chapters] = await Promise.all([
     queryCollection("posts").all() as Promise<PostItem[]>,
-    queryCollection("chapters").all() as Promise<ChapterItem[]>,
-    queryCollection("chapterPosts").all() as Promise<ChapterPostItem[]>
+    queryCollection("chapters").all() as Promise<ChapterItem[]>
   ]);
 
   return buildUnifiedFeed({
     posts,
     chapters,
-    chapterPosts,
-    showDrafts: config.public.showDrafts
+    showDrafts: config.public.showDrafts,
+    includeChapterPosts: false
   }).slice(0, 6);
 });
 

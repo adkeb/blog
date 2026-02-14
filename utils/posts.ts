@@ -82,12 +82,14 @@ export function sortChapterChildren(posts: ChapterPostItem[]): ChapterPostItem[]
 export function buildUnifiedFeed(input: {
   posts: PostItem[];
   chapters: ChapterItem[];
-  chapterPosts: ChapterPostItem[];
+  chapterPosts?: ChapterPostItem[];
   showDrafts: boolean;
+  includeChapterPosts?: boolean;
 }): FeedItem[] {
+  const includeChapterPosts = input.includeChapterPosts ?? false;
   const posts = filterByVisibility(input.posts, input.showDrafts);
   const chapters = filterByVisibility(input.chapters, input.showDrafts);
-  const chapterPosts = filterByVisibility(input.chapterPosts, input.showDrafts);
+  const chapterPosts = filterByVisibility(input.chapterPosts || [], input.showDrafts);
 
   const allChapterMap = new Map<string, ChapterItem>();
   for (const chapter of input.chapters) {
@@ -110,6 +112,10 @@ export function buildUnifiedFeed(input: {
     kind: "chapter",
     url: getChapterUrl(chapter.slug)
   }));
+
+  if (!includeChapterPosts) {
+    return [...postItems, ...chapterItems].sort((a, b) => toTimestamp(b.date) - toTimestamp(a.date));
+  }
 
   const chapterPostItems: FeedItem[] = [];
   for (const post of chapterPosts) {

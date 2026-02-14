@@ -27,16 +27,15 @@ export async function getVisibleChapterPosts(event: H3Event): Promise<ChapterPos
 
 export async function getVisibleFeed(event: H3Event): Promise<FeedItem[]> {
   const config = useRuntimeConfig(event);
-  const [posts, chapters, chapterPosts] = await Promise.all([
+  const [posts, chapters] = await Promise.all([
     queryCollection(event, "posts").all() as Promise<PostItem[]>,
-    queryCollection(event, "chapters").all() as Promise<ChapterItem[]>,
-    queryCollection(event, "chapterPosts").all() as Promise<ChapterPostItem[]>
+    queryCollection(event, "chapters").all() as Promise<ChapterItem[]>
   ]);
 
   return buildUnifiedFeed({
     posts,
     chapters,
-    chapterPosts,
-    showDrafts: config.public.showDrafts
+    showDrafts: config.public.showDrafts,
+    includeChapterPosts: false
   });
 }
