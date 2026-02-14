@@ -7,6 +7,23 @@
   --brand: #0f766e;
   --brand-strong: #134e4a;
   --tag-bg: #e2e8f0;
+  --bg-glow: #dff8f5;
+  --shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+  --header-bg: #ffffffcc;
+}
+
+:root[data-theme="dark"] {
+  --bg: #0b1220;
+  --bg-elevated: #111a2b;
+  --text: #d9e2f1;
+  --text-muted: #9aacbf;
+  --line: #2a3a52;
+  --brand: #55c7b9;
+  --brand-strong: #8be5d9;
+  --tag-bg: #1d2a3f;
+  --bg-glow: #13263f;
+  --shadow: 0 16px 34px rgba(2, 8, 23, 0.45);
+  --header-bg: #0f172acc;
 }
 
 * {
@@ -21,10 +38,11 @@ body,
 }
 
 body {
-  background: radial-gradient(1200px circle at 0 0, #dff8f5 0%, var(--bg) 55%);
+  background: radial-gradient(1200px circle at 0 0, var(--bg-glow) 0%, var(--bg) 55%);
   color: var(--text);
   font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
   line-height: 1.65;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 a {
@@ -46,7 +64,7 @@ a:hover {
   background: var(--bg-elevated);
   border: 1px solid var(--line);
   border-radius: 16px;
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+  box-shadow: var(--shadow);
 }
 
 .meta {
@@ -80,4 +98,3 @@ a:hover {
 .prose code {
   font-family: "JetBrains Mono", "Fira Code", monospace;
 }
-

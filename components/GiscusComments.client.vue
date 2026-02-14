@@ -9,14 +9,49 @@
 const container = ref<HTMLElement | null>(null);
 const route = useRoute();
 const config = useRuntimeConfig();
+const { theme } = useTheme();
+const mountedKey = ref("");
 
 const enabled = computed(() => {
   const g = config.public.giscus;
   return Boolean(g.repo && g.repoId && g.category && g.categoryId);
 });
 
-function mountGiscus() {
+const resolvedTheme = computed(() => {
+  const configured = String(config.public.giscus.theme || "").trim();
+  if (!configured || configured === "preferred_color_scheme") {
+    return theme.value === "dark" ? "dark" : "light";
+  }
+  return configured;
+});
+
+function postThemeToIframe(nextTheme: string): boolean {
+  const iframe = container.value?.querySelector<HTMLIFrameElement>("iframe.giscus-frame");
+  if (!iframe?.contentWindow) {
+    return false;
+  }
+
+  iframe.contentWindow.postMessage(
+    {
+      giscus: {
+        setConfig: {
+          theme: nextTheme
+        }
+      }
+    },
+    "https://giscus.app"
+  );
+  return true;
+}
+
+function mountGiscus(force = false) {
   if (!enabled.value || !container.value) {
+    return;
+  }
+
+  const key = `${route.path}::${resolvedTheme.value}`;
+  const hasFrame = Boolean(container.value.querySelector("iframe.giscus-frame"));
+  if (!force && hasFrame && mountedKey.value === key) {
     return;
   }
 
@@ -36,21 +71,50 @@ function mountGiscus() {
   script.setAttribute("data-reactions-enabled", g.reactionsEnabled);
   script.setAttribute("data-emit-metadata", g.emitMetadata);
   script.setAttribute("data-input-position", g.inputPosition);
-  script.setAttribute("data-theme", g.theme);
+  script.setAttribute("data-theme", resolvedTheme.value);
   script.setAttribute("data-lang", "zh-CN");
-  script.setAttribute("data-loading", "lazy");
+  script.setAttribute("data-loading", "eager");
 
   container.value.appendChild(script);
+  mountedKey.value = key;
+}
+
+function refreshAfterPopup() {
+  window.setTimeout(() => {
+    mountGiscus(true);
+  }, 260);
+}
+
+function onVisibilityChange() {
+  if (document.visibilityState === "visible") {
+    refreshAfterPopup();
+  }
 }
 
 onMounted(() => {
-  mountGiscus();
+  mountGiscus(true);
+  window.addEventListener("focus", refreshAfterPopup);
+  document.addEventListener("visibilitychange", onVisibilityChange);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("focus", refreshAfterPopup);
+  document.removeEventListener("visibilitychange", onVisibilityChange);
 });
 
 watch(
-  () => route.fullPath,
+  () => route.path,
   () => {
-    mountGiscus();
+    mountGiscus(true);
+  }
+);
+
+watch(
+  () => resolvedTheme.value,
+  (nextTheme) => {
+    if (!postThemeToIframe(nextTheme)) {
+      mountGiscus(true);
+    }
   }
 );
 </script>
