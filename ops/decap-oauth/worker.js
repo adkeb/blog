@@ -35,13 +35,117 @@ function html(body, status = 200) {
   });
 }
 
-function buildGitHubAuthorizeUrl(env, state) {
+function buildGitHubAuthorizeUrl(env, state, scope = "repo") {
   const authorize = new URL("https://github.com/login/oauth/authorize");
   authorize.searchParams.set("client_id", env.GITHUB_CLIENT_ID);
   authorize.searchParams.set("redirect_uri", env.GITHUB_REDIRECT_URI);
-  authorize.searchParams.set("scope", "repo");
+  authorize.searchParams.set("scope", scope || "repo");
   authorize.searchParams.set("state", state);
   return authorize.toString();
+}
+
+function normalizeOrigin(value) {
+  if (!value) {
+    return "";
+  }
+
+  try {
+    return new URL(value).origin;
+  } catch {
+    return "";
+  }
+}
+
+function buildAuthHandshakePage({ provider, cmsOrigin, authorizeUrl }) {
+  const handshake = `authorizing:${provider}`;
+  const targetOrigin = normalizeOrigin(cmsOrigin) || "*";
+
+  return `
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Authorizing...</title>
+  </head>
+  <body>
+    <script>
+      (function () {
+        const handshake = ${JSON.stringify(handshake)};
+        const targetOrigin = ${JSON.stringify(targetOrigin)};
+        const authorizeUrl = ${JSON.stringify(authorizeUrl)};
+        let redirected = false;
+
+        function goAuthorize() {
+          if (redirected) {
+            return;
+          }
+          redirected = true;
+          window.location.replace(authorizeUrl);
+        }
+
+        function onMessage(event) {
+          if (event.data !== handshake) {
+            return;
+          }
+          window.removeEventListener("message", onMessage, false);
+          goAuthorize();
+        }
+
+        window.addEventListener("message", onMessage, false);
+
+        if (window.opener && typeof window.opener.postMessage === "function") {
+          try {
+            window.opener.postMessage(handshake, targetOrigin);
+          } catch {
+            window.opener.postMessage(handshake, "*");
+          }
+        } else {
+          goAuthorize();
+          return;
+        }
+
+        // Fallback if handshake echo fails in strict popup environments.
+        setTimeout(goAuthorize, 1500);
+      })();
+    </script>
+    Authorizing...
+  </body>
+</html>`;
+}
+
+function buildAuthResultPage({ provider, type, payload, cmsOrigin }) {
+  const targetOrigin = normalizeOrigin(cmsOrigin) || "*";
+  const eventName = `authorization:${provider}:${type}:`;
+
+  return `
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Auth ${type}</title>
+  </head>
+  <body>
+    <script>
+      (function () {
+        const targetOrigin = ${JSON.stringify(targetOrigin)};
+        const message = ${JSON.stringify(eventName)} + JSON.stringify(${JSON.stringify(payload)});
+
+        if (!window.opener) {
+          document.body.textContent = "OAuth completed. You can close this window.";
+          return;
+        }
+
+        try {
+          window.opener.postMessage(message, targetOrigin);
+        } catch {
+          window.opener.postMessage(message, "*");
+        }
+
+        window.close();
+      })();
+    </script>
+  </body>
+</html>`;
 }
 
 function encodeState(payload, secret) {
@@ -85,14 +189,20 @@ async function handleAuth(url, env) {
   const origin = url.searchParams.get("origin");
   const host = url.searchParams.get("host");
   const siteId = url.searchParams.get("site_id");
+  const provider = url.searchParams.get("provider") || "github";
+  const scope = url.searchParams.get("scope") || "repo";
+
+  if (provider !== "github") {
+    return json({ error: "unsupported provider" }, 400);
+  }
 
   const decodedState = parseRawState(rawState);
   const cmsOrigin =
-    origin ||
-    decodedState?.origin ||
-    (host ? `https://${host}` : "") ||
-    (siteId ? `https://${siteId}` : "") ||
-    env.CMS_ORIGIN ||
+    normalizeOrigin(origin) ||
+    normalizeOrigin(decodedState?.origin) ||
+    normalizeOrigin(host ? `https://${host}` : "") ||
+    normalizeOrigin(siteId ? `https://${siteId}` : "") ||
+    normalizeOrigin(env.CMS_ORIGIN) ||
     "";
 
   if (!cmsOrigin) {
@@ -102,12 +212,13 @@ async function handleAuth(url, env) {
   const now = Date.now();
   const payload = {
     cmsOrigin,
+    provider,
     ts: now
   };
   const signedState = encodeState(payload, env.OAUTH_STATE_SECRET);
-  const location = buildGitHubAuthorizeUrl(env, signedState);
+  const authorizeUrl = buildGitHubAuthorizeUrl(env, signedState, scope);
 
-  return Response.redirect(location, 302);
+  return html(buildAuthHandshakePage({ provider, cmsOrigin, authorizeUrl }));
 }
 
 async function handleCallback(url, env) {
@@ -122,6 +233,8 @@ async function handleCallback(url, env) {
   if (!parsedState?.cmsOrigin) {
     return json({ error: "invalid state" }, 400);
   }
+
+  const provider = parsedState.provider || "github";
 
   const tokenResp = await fetch("https://github.com/login/oauth/access_token", {
     method: "POST",
@@ -142,37 +255,32 @@ async function handleCallback(url, env) {
   const accessToken = tokenJson.access_token;
 
   if (!accessToken) {
-    return json(
-      {
-        error: "token exchange failed",
-        detail: tokenJson
-      },
+    const errorPayload = {
+      message: "token exchange failed",
+      detail: tokenJson
+    };
+
+    return html(
+      buildAuthResultPage({
+        provider,
+        type: "error",
+        payload: errorPayload,
+        cmsOrigin: parsedState.cmsOrigin
+      }),
       500
     );
   }
 
-  const script = `
-<!doctype html>
-<html lang="en">
-  <head><meta charset="utf-8"><title>Auth success</title></head>
-  <body>
-    <script>
-      (function () {
-        const token = ${JSON.stringify(accessToken)};
-        const target = ${JSON.stringify(parsedState.cmsOrigin)};
-        if (window.opener) {
-          window.opener.postMessage(
-            "authorization:github:success:" + JSON.stringify({ token: token }),
-            target
-          );
-          window.close();
-        } else {
-          document.body.textContent = "OAuth succeeded. You can close this window.";
-        }
-      })();
-    </script>
-  </body>
-</html>`;
-
-  return html(script, 200);
+  return html(
+    buildAuthResultPage({
+      provider,
+      type: "success",
+      payload: {
+        token: accessToken,
+        provider
+      },
+      cmsOrigin: parsedState.cmsOrigin
+    }),
+    200
+  );
 }
