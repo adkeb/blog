@@ -10,6 +10,11 @@
   --bg-glow: #dff8f5;
   --shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
   --header-bg: #ffffffcc;
+  --code-bg: #0f172a;
+  --code-text: #e2e8f0;
+  --code-border: #1e293b;
+  --inline-code-bg: #e2e8f0;
+  --inline-code-text: #0f172a;
 }
 
 :root[data-theme="dark"] {
@@ -24,6 +29,11 @@
   --bg-glow: #13263f;
   --shadow: 0 16px 34px rgba(2, 8, 23, 0.45);
   --header-bg: #0f172acc;
+  --code-bg: #0b1220;
+  --code-text: #d9e2f1;
+  --code-border: #25344d;
+  --inline-code-bg: #22324a;
+  --inline-code-text: #d9e2f1;
 }
 
 * {
@@ -88,13 +98,25 @@ a:hover {
 }
 
 .prose pre {
-  background: #0f172a;
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
   border-radius: 10px;
-  color: #e2e8f0;
+  color: var(--code-text);
   overflow-x: auto;
   padding: 1rem;
 }
 
 .prose code {
   font-family: "JetBrains Mono", "Fira Code", monospace;
+}
+
+.prose pre code {
+  color: inherit;
+}
+
+.prose :not(pre) > code {
+  background: var(--inline-code-bg);
+  border-radius: 6px;
+  color: var(--inline-code-text);
+  padding: 0.1rem 0.35rem;
 }

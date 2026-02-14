@@ -1,7 +1,7 @@
 <template>
   <header class="header">
     <div class="container row">
-      <NuxtLink class="brand" to="/">Personal Blog</NuxtLink>
+      <NuxtLink class="brand" to="/">{{ customization.brandName }}</NuxtLink>
       <div class="actions">
         <nav class="nav">
           <NuxtLink to="/posts">文章</NuxtLink>
@@ -28,6 +28,7 @@
 <script setup lang="ts">
 const runtimeConfig = useRuntimeConfig();
 const { theme, toggleTheme } = useTheme();
+const { state: customization } = useLiveCustomization();
 
 const themeLabel = computed(() => (theme.value === "dark" ? "日间" : "夜间"));
 </script>

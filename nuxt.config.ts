@@ -18,6 +18,9 @@ const giscusEmitMetadata =
 const giscusInputPosition =
   process.env.GISCUS_INPUT_POSITION || process.env.NUXT_PUBLIC_GISCUS_INPUT_POSITION || "top";
 const giscusTheme = process.env.GISCUS_THEME || process.env.NUXT_PUBLIC_GISCUS_THEME || "light";
+const adminGithubLogin = process.env.NUXT_PUBLIC_ADMIN_GITHUB_LOGIN || "";
+const adminOauthBaseUrl =
+  process.env.NUXT_PUBLIC_ADMIN_OAUTH_BASE_URL || "https://decap-github-oauth.xuyang020128.workers.dev";
 
 export default defineNuxtConfig({
   compatibilityDate: "2024-11-01",
@@ -41,7 +44,9 @@ export default defineNuxtConfig({
         emitMetadata: giscusEmitMetadata,
         inputPosition: giscusInputPosition,
         theme: giscusTheme
-      }
+      },
+      adminGithubLogin,
+      adminOauthBaseUrl
     }
   },
   app: {

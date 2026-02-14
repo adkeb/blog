@@ -1,11 +1,8 @@
 <template>
   <section class="surface hero">
-    <p class="eyebrow">Cloudflare Pages + Tunnel</p>
-    <h1>个人技术博客</h1>
-    <p>
-      这是一个以技术沉淀为目标的博客模板。公开站点部署在 Cloudflare Pages，
-      私有预览和后台通过 Cloudflare Tunnel 暴露。
-    </p>
+    <p class="eyebrow">{{ customization.heroEyebrow }}</p>
+    <h1>{{ customization.heroTitle }}</h1>
+    <p>{{ customization.heroDescription }}</p>
     <div class="hero-actions">
       <NuxtLink class="cta" to="/posts">进入文章列表</NuxtLink>
       <NuxtLink class="cta secondary" to="/search">搜索文章</NuxtLink>
@@ -29,6 +26,7 @@ import type { ChapterItem, FeedItem, PostItem } from "~/types/post";
 import { buildUnifiedFeed } from "~/utils/posts";
 
 const config = useRuntimeConfig();
+const { state: customization } = useLiveCustomization();
 
 const { data } = await useAsyncData("home-posts", async () => {
   const [posts, chapters] = await Promise.all([

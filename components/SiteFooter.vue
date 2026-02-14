@@ -1,13 +1,14 @@
 <template>
   <footer class="footer">
     <div class="container">
-      <p>© {{ year }} Personal Blog. Built with Nuxt + Cloudflare Pages.</p>
+      <p>© {{ year }} {{ customization.footerText }}</p>
     </div>
   </footer>
 </template>
 
 <script setup lang="ts">
 const year = new Date().getFullYear();
+const { state: customization } = useLiveCustomization();
 </script>
 
 <style scoped>
@@ -19,4 +20,3 @@ const year = new Date().getFullYear();
   text-align: center;
 }
 </style>
-
