@@ -74,19 +74,25 @@ collections:
     create: true
     extension: md
     format: frontmatter
-    slug: "{{chapterSlug}}/{{slug}}"
+    slug: "{{slug}}"
+    path: "{{chapterSlug}}/{{slug}}"
+    nested:
+      depth: 2
+      subfolders: false
+      summary: "{{title}}"
     summary: "子文章｜{{chapterSlug}} / {{title}} (第{{order}}节)"
     fields:
       - { label: 标题, name: title, widget: string }
       - { label: 路由标识, name: slug, widget: string, hint: "用于 /chapters/:chapterSlug/:slug" }
       - {
-          label: 所属章节,
+          label: 所属主章节,
           name: chapterSlug,
           widget: relation,
           collection: chapters,
           search_fields: [title, slug],
           value_field: slug,
-          display_fields: [title, slug]
+          display_fields: [title, slug],
+          hint: "子文章必须绑定一个章节；保存后文件会落到 content/chapter-posts/<chapterSlug>/ 目录下。"
         }
       - { label: 章节内序号, name: order, widget: number, value_type: int, min: 1, default: 1 }
       - { label: 摘要, name: description, widget: text }
