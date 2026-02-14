@@ -11,6 +11,8 @@ const route = useRoute();
 const config = useRuntimeConfig();
 const { theme } = useTheme();
 const mountedKey = ref("");
+let ensureTimer: ReturnType<typeof window.setTimeout> | null = null;
+let retryCount = 0;
 
 const enabled = computed(() => {
   const g = config.public.giscus;
@@ -44,13 +46,45 @@ function postThemeToIframe(nextTheme: string): boolean {
   return true;
 }
 
+function hasGiscusFrame(): boolean {
+  return Boolean(container.value?.querySelector("iframe.giscus-frame"));
+}
+
+function clearEnsureTimer(): void {
+  if (ensureTimer) {
+    window.clearTimeout(ensureTimer);
+    ensureTimer = null;
+  }
+}
+
+function scheduleEnsureFrame(key: string): void {
+  clearEnsureTimer();
+  ensureTimer = window.setTimeout(() => {
+    if (mountedKey.value !== key) {
+      return;
+    }
+
+    if (hasGiscusFrame()) {
+      retryCount = 0;
+      return;
+    }
+
+    if (retryCount >= 2) {
+      return;
+    }
+
+    retryCount += 1;
+    mountGiscus(true);
+  }, 3200);
+}
+
 function mountGiscus(force = false) {
   if (!enabled.value || !container.value) {
     return;
   }
 
   const key = `${route.path}::${resolvedTheme.value}`;
-  const hasFrame = Boolean(container.value.querySelector("iframe.giscus-frame"));
+  const hasFrame = hasGiscusFrame();
   if (!force && hasFrame && mountedKey.value === key) {
     return;
   }
@@ -75,36 +109,27 @@ function mountGiscus(force = false) {
   script.setAttribute("data-lang", "zh-CN");
   script.setAttribute("data-loading", "eager");
 
+  script.addEventListener("error", () => {
+    scheduleEnsureFrame(key);
+  });
+
   container.value.appendChild(script);
   mountedKey.value = key;
-}
-
-function refreshAfterPopup() {
-  window.setTimeout(() => {
-    mountGiscus(true);
-  }, 260);
-}
-
-function onVisibilityChange() {
-  if (document.visibilityState === "visible") {
-    refreshAfterPopup();
-  }
+  scheduleEnsureFrame(key);
 }
 
 onMounted(() => {
   mountGiscus(true);
-  window.addEventListener("focus", refreshAfterPopup);
-  document.addEventListener("visibilitychange", onVisibilityChange);
 });
 
 onBeforeUnmount(() => {
-  window.removeEventListener("focus", refreshAfterPopup);
-  document.removeEventListener("visibilitychange", onVisibilityChange);
+  clearEnsureTimer();
 });
 
 watch(
   () => route.path,
   () => {
+    retryCount = 0;
     mountGiscus(true);
   }
 );
