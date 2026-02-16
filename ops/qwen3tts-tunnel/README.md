@@ -11,16 +11,24 @@ and expose it through Cloudflare Tunnel.
 4. Project path exists: `/root/work/qwen3tts/tts-web-api`
 5. Tunnel route exists: `tts.xuyangfly.site -> http://127.0.0.1:5173`
 
-## Foreground run
+## Combined run (legacy)
 
 ```bash
 export CF_TUNNEL_TOKEN_QWEN3TTS='<YOUR_TUNNEL_TOKEN>'
 ./ops/qwen3tts-tunnel/run-qwen3tts-with-tunnel.sh
 ```
 
-Use this for debugging. Keep terminal open.
+This starts app + tunnel in one process. Keep terminal open.
 
-## Background daemon run (recommended)
+## Recommended split mode (app and tunnel separated)
+
+Terminal A (app, foreground with full logs):
+
+```bash
+./ops/qwen3tts-tunnel/start-qwen3tts.sh
+```
+
+Terminal B (tunnel daemon, can stay always-on):
 
 ```bash
 export CF_TUNNEL_TOKEN_QWEN3TTS='<YOUR_TUNNEL_TOKEN>'
@@ -36,26 +44,12 @@ Manage daemon:
 ./ops/qwen3tts-tunnel/daemon-qwen3tts-tunnel.sh stop
 ```
 
-## Split run
-
-Terminal 1:
-
-```bash
-./ops/qwen3tts-tunnel/start-qwen3tts.sh
-```
-
-Terminal 2:
-
-```bash
-export CF_TUNNEL_TOKEN_QWEN3TTS='<YOUR_TUNNEL_TOKEN>'
-./ops/qwen3tts-tunnel/start-cloudflared-tunnel.sh
-```
-
 ## Troubleshooting
 
 1. Browser shows `ERR_CONNECTION_CLOSED`:
    - Usually tunnel process is not running.
    - Run `./ops/qwen3tts-tunnel/daemon-qwen3tts-tunnel.sh status`.
+   - Also verify app is running in Terminal A.
 2. `403 Blocked request. This host is not allowed.`:
    - Add `server.allowedHosts: ['tts.xuyangfly.site']` in:
      `/root/work/qwen3tts/tts-web-api/frontend-react/vite.config.js`

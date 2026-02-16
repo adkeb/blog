@@ -31,15 +31,18 @@
 
 ### 3.1 Qwen3TTS（已提供脚本）
 
+推荐“分离运行”：
+
+- 控制台 A：只启动应用（方便观察 FastAPI/Vite 日志）
+- Tunnel：单独后台常驻（不随应用终端关闭）
+
 ```bash
 cd /root/work/bilibili
-export CF_TUNNEL_TOKEN_QWEN3TTS='<你的TunnelToken>'
-./ops/qwen3tts-tunnel/run-qwen3tts-with-tunnel.sh
+# 控制台 A：前台启动应用
+./ops/qwen3tts-tunnel/start-qwen3tts.sh
 ```
 
-该脚本固定使用 `/root/anaconda3` 下的 `qwen3-tts` 环境，并启动前后端后接入 Tunnel。
-
-如需后台常驻（避免关闭终端后断开），使用守护模式：
+Tunnel 后台常驻：
 
 ```bash
 cd /root/work/bilibili
@@ -53,6 +56,8 @@ export CF_TUNNEL_TOKEN_QWEN3TTS='<你的TunnelToken>'
 ./ops/qwen3tts-tunnel/daemon-qwen3tts-tunnel.sh status
 ./ops/qwen3tts-tunnel/daemon-qwen3tts-tunnel.sh logs
 ```
+
+说明：`start-qwen3tts.sh` 固定使用 `/root/anaconda3` 下的 `qwen3-tts` 环境。
 
 ### 3.2 其他应用
 

@@ -3,7 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 RUNTIME_DIR="${QWEN3TTS_RUNTIME_DIR:-/root/work/qwen3tts/run}"
-PID_FILE="$RUNTIME_DIR/qwen3tts-tunnel.pid"
+PID_FILE="$RUNTIME_DIR/cloudflared-qwen3tts.pid"
 LOG_FILE="${QWEN3TTS_DAEMON_LOG:-$RUNTIME_DIR/qwen3tts-tunnel.log}"
 
 mkdir -p "$RUNTIME_DIR"
@@ -49,14 +49,17 @@ start() {
 
   require_token
 
-  # Use a new process group so stop() can terminate all child processes together.
-  nohup setsid "$SCRIPT_DIR/run-qwen3tts-with-tunnel.sh" >>"$LOG_FILE" 2>&1 &
+  # Run only cloudflared in daemon mode.
+  # App should be started manually in a separate terminal:
+  #   ./ops/qwen3tts-tunnel/start-qwen3tts.sh
+  nohup setsid "$SCRIPT_DIR/start-cloudflared-tunnel.sh" >>"$LOG_FILE" 2>&1 &
   local pid=$!
   echo "$pid" >"$PID_FILE"
   sleep 1
 
   if kill -0 "$pid" >/dev/null 2>&1; then
-    echo "Started qwen3tts+tunnel daemon (PID=$pid)"
+    echo "Started cloudflared daemon (PID=$pid)"
+    echo "App process is managed separately."
     echo "Log file: $LOG_FILE"
     return 0
   fi
@@ -105,6 +108,9 @@ stop() {
 status() {
   if is_running; then
     echo "Running (PID=$(cat "$PID_FILE"))."
+    ps -fp "$(cat "$PID_FILE")" || true
+    echo "---"
+    echo "App local ports (if app started manually):"
     ss -ltnp | rg ':5173|:8000' || true
     return 0
   fi
