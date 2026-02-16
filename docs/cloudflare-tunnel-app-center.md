@@ -39,6 +39,21 @@ export CF_TUNNEL_TOKEN_QWEN3TTS='<你的TunnelToken>'
 
 该脚本固定使用 `/root/anaconda3` 下的 `qwen3-tts` 环境，并启动前后端后接入 Tunnel。
 
+如需后台常驻（避免关闭终端后断开），使用守护模式：
+
+```bash
+cd /root/work/bilibili
+export CF_TUNNEL_TOKEN_QWEN3TTS='<你的TunnelToken>'
+./ops/qwen3tts-tunnel/daemon-qwen3tts-tunnel.sh start
+```
+
+查看状态与日志：
+
+```bash
+./ops/qwen3tts-tunnel/daemon-qwen3tts-tunnel.sh status
+./ops/qwen3tts-tunnel/daemon-qwen3tts-tunnel.sh logs
+```
+
 ### 3.2 其他应用
 
 其他应用按各自启动方式运行后，只要在 Tunnel 中配置好 Hostname -> 本地端口即可被公网访问。
