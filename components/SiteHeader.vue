@@ -6,6 +6,7 @@
         <nav class="nav">
           <NuxtLink to="/posts">文章</NuxtLink>
           <NuxtLink to="/chapters">章节</NuxtLink>
+          <NuxtLink to="/apps">应用</NuxtLink>
           <NuxtLink to="/search">搜索</NuxtLink>
           <NuxtLink to="/about">关于</NuxtLink>
         </nav>

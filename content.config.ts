@@ -14,6 +14,22 @@ const basePostSchema = z.object({
   lang: z.string().default("zh-CN")
 });
 
+const appSchema = z.object({
+  title: z.string(),
+  slug: z.string(),
+  description: z.string(),
+  url: z.string(),
+  date: z.string(),
+  updated: z.string().optional(),
+  tags: z.array(z.string()).default([]),
+  category: z.string().default("Application"),
+  status: z.enum(["online", "private", "offline"]).default("online"),
+  order: z.number().default(100),
+  cover: z.string().optional(),
+  draft: z.boolean().default(false),
+  lang: z.string().default("zh-CN")
+});
+
 export default defineContentConfig({
   collections: {
     posts: defineCollection({
@@ -34,6 +50,11 @@ export default defineContentConfig({
         order: z.number(),
         legacySlugs: z.array(z.string()).default([])
       })
+    }),
+    apps: defineCollection({
+      type: "page",
+      source: "apps/*.md",
+      schema: appSchema
     })
   }
 });

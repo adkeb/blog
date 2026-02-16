@@ -27,6 +27,7 @@
 
 - 文章列表、详情页、标签页、搜索页
 - 章节体系：`/chapters`、章节详情、章节子文章详情
+- 应用中心：`/apps`（统一外部应用入口，可扩展多应用）
 - 草稿可见性开关（`NUXT_PUBLIC_SHOW_DRAFTS`）
 - RSS：`/rss.xml`
 - Sitemap：`/sitemap.xml`
@@ -65,11 +66,13 @@ cp ops/cloudflare/tunnel/config.example.yml ops/cloudflare/tunnel/config.yml
 - 环境变量模板：`.env.example`
   - 公开接口变量：`SITE_URL`、`PREVIEW_URL`、`GISCUS_*`、`CF_ACCESS_AUD`
 - 内容模型：`content.config.ts`
+- 应用入口内容：`content/apps/*.md`
 - CMS 配置：`public/admin/config.yml`
 - CMS OAuth 部署：`docs/decap-github-oauth-cloudflare-worker.md`
 - Tunnel 配置模板：`ops/cloudflare/tunnel/config.example.yml`
 - Zero Trust 策略模板：`ops/cloudflare/tunnel/access-policies.md`
 - 部署文档：`docs/cloudflare-pages-tunnel.md`
+- 多应用 Tunnel + 应用中心文档：`docs/cloudflare-tunnel-app-center.md`
 
 ## 验收要点
 
@@ -132,3 +135,29 @@ draft: false
 
 - 文件路径必须与 `chapterSlug` 一致（字段 + 目录双重校验）。
 - 访问旧链接 `/posts/:legacySlug` 会 301 到 `/chapters/:chapterSlug/:slug`。
+
+## 应用中心（多应用统一入口）
+
+- 页面入口：`/apps`
+- 数据来源：`content/apps/*.md`
+- CMS 集合：后台 `应用中心`
+
+每新增一个应用（不仅是 TTS），都按下面流程：
+
+1. 在 Cloudflare Tunnel 新增一个子域到本地服务的映射（如 `xxx.xuyangfly.site -> http://127.0.0.1:<port>`）。
+2. 在 `content/apps/` 新增对应条目，应用会自动出现在 `/apps` 页面。
+
+应用条目 Frontmatter 示例：
+
+```yaml
+---
+title: "My App"
+slug: "my-app"
+description: "应用说明"
+url: "https://my-app.xuyangfly.site"
+date: "2026-02-16"
+status: "online" # online | private | offline
+order: 20
+draft: false
+---
+```

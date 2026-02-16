@@ -5,6 +5,7 @@
     <p>{{ customization.heroDescription }}</p>
     <div class="hero-actions">
       <NuxtLink class="cta" to="/posts">进入文章列表</NuxtLink>
+      <NuxtLink class="cta secondary" to="/apps">应用中心</NuxtLink>
       <NuxtLink class="cta secondary" to="/search">搜索文章</NuxtLink>
     </div>
   </section>

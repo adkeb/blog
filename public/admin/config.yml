@@ -115,3 +115,39 @@ collections:
         name: body
         widget: markdown
         modes: [raw, rich_text]
+  - name: apps
+    label: 应用中心
+    folder: content/apps
+    create: true
+    extension: md
+    format: frontmatter
+    slug: "{{slug}}"
+    summary: "应用｜{{title}} - {{status}}"
+    fields:
+      - { label: 应用名称, name: title, widget: string }
+      - { label: 应用标识, name: slug, widget: string, hint: "建议英文短词，用于内部识别" }
+      - { label: 描述, name: description, widget: text }
+      - { label: 直达链接, name: url, widget: string, hint: "例如 https://tts.xuyangfly.site" }
+      - { label: 发布日期, name: date, widget: datetime, format: "YYYY-MM-DD", date_format: "YYYY-MM-DD", time_format: false }
+      - { label: 更新日期, name: updated, widget: datetime, required: false, format: "YYYY-MM-DD", date_format: "YYYY-MM-DD", time_format: false }
+      - { label: 标签, name: tags, widget: list, field: { label: 标签, name: tag, widget: string }, required: false }
+      - { label: 分类, name: category, widget: string, default: Application }
+      - {
+          label: 状态,
+          name: status,
+          widget: select,
+          options:
+            - { label: 在线, value: online }
+            - { label: 私有, value: private }
+            - { label: 离线, value: offline }
+          default: online
+        }
+      - { label: 排序序号, name: order, widget: number, value_type: int, default: 100, min: 1 }
+      - { label: 封面, name: cover, widget: image, required: false }
+      - { label: 草稿, name: draft, widget: boolean, default: false }
+      - { label: 语言, name: lang, widget: string, default: zh-CN }
+      - label: 备注
+        name: body
+        widget: markdown
+        required: false
+        modes: [raw, rich_text]
